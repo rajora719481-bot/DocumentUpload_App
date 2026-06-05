@@ -1,0 +1,678 @@
+﻿@{
+    Layout = null;
+    var doc = ViewBag.Document as DocumentUpload_App.Models.Document;
+    var relatedDocs = ViewBag.RelatedDocs as List<DocumentUpload_App.Models.Document>;
+
+    string fileName = System.IO.Path.GetFileName(doc.DocumentPath ?? "");
+    string ext = System.IO.Path.GetExtension(fileName).ToLower();
+    bool isPreview = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" }.Contains(ext);
+    string viewUrl = Url.Action("PublicDownload", "Document", new { id = doc.EnteryNo });
+    string dlUrl = Url.Action("PublicDownload", "Document", new { id = doc.EnteryNo });
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@doc.MasterDocumentName | DocumentUpload</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #1a6fd4;
+            --primary-dark: #0d3a70;
+            --primary-light: #e8f1fd;
+            --bg: #f0f4fb;
+            --white: #fff;
+            --border: #dde3ef;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --shadow: 0 2px 16px rgba(26,111,212,0.10);
+            --radius: 14px;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            color: var(--text);
+        }
+
+        /* ===== TOPBAR ===== */
+        .topbar {
+            background: linear-gradient(135deg, #0d3a70, #1a6fd4);
+            padding: 0.85rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 12px rgba(13,58,112,0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+        }
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .brand-icon svg {
+                width: 18px;
+                height: 18px;
+            }
+
+        .brand-name {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .brand-sub {
+            font-size: 10px;
+            opacity: 0.6;
+        }
+
+        .topbar-company {
+            font-size: 11px;
+            color: rgba(255,255,255,0.55);
+            text-align: right;
+        }
+
+        /* ===== MAIN ===== */
+        .main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem;
+        }
+
+        /* ===== MAIN DOCUMENT CARD ===== */
+        .doc-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .doc-card-header {
+            background: linear-gradient(135deg, #0d3a70, #1a6fd4);
+            padding: 1.5rem;
+            color: #fff;
+        }
+
+        .doc-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 3px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .doc-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+
+        .doc-meta-row {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .doc-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .doc-meta-label {
+            font-size: 10px;
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .doc-meta-value {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Action Buttons */
+        .doc-actions {
+            padding: 1rem 1.5rem;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border);
+            background: #f8faff;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 20px;
+            border-radius: 10px;
+            border: none;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Segoe UI', sans-serif;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+            .btn svg {
+                width: 15px;
+                height: 15px;
+            }
+
+        .btn-view {
+            background: var(--primary);
+            color: #fff;
+        }
+
+            .btn-view:hover {
+                background: var(--primary-dark);
+                box-shadow: 0 6px 16px rgba(26,111,212,0.3);
+                transform: translateY(-1px);
+            }
+
+        .btn-download {
+            background: var(--white);
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
+        }
+
+            .btn-download:hover {
+                background: var(--primary-light);
+            }
+
+        /* Preview Area */
+        .preview-area {
+            padding: 1.5rem;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-frame {
+            width: 100%;
+            height: 500px;
+            border: none;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .preview-placeholder {
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+            .preview-placeholder svg {
+                width: 56px;
+                height: 56px;
+                opacity: 0.25;
+                margin-bottom: 1rem;
+                display: block;
+                margin: 0 auto 1rem;
+            }
+
+            .preview-placeholder p {
+                font-size: 14px;
+                margin-bottom: 0.5rem;
+            }
+
+            .preview-placeholder span {
+                font-size: 12px;
+                opacity: 0.7;
+            }
+
+        /* ===== RELATED DOCS ===== */
+        .section-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+        }
+
+            .section-title svg {
+                color: var(--primary);
+                width: 18px;
+                height: 18px;
+            }
+
+        .category-badge {
+            display: inline-block;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 20px;
+            padding: 2px 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1rem;
+        }
+
+        .related-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            border: 1.5px solid var(--border);
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+            .related-card:hover {
+                border-color: var(--primary);
+                box-shadow: 0 4px 16px rgba(26,111,212,0.15);
+                transform: translateY(-2px);
+            }
+
+            .related-card.active {
+                border-color: var(--primary);
+                background: var(--primary-light);
+            }
+
+        .related-card-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+            .related-card-icon svg {
+                width: 18px;
+                height: 18px;
+                color: var(--primary);
+            }
+
+        .related-card-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.4;
+        }
+
+        .related-card-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .related-card-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .related-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .btn-sm {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Segoe UI', sans-serif;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+            .btn-sm svg {
+                width: 12px;
+                height: 12px;
+            }
+
+        .btn-sm-view {
+            background: var(--primary);
+            color: #fff;
+        }
+
+            .btn-sm-view:hover {
+                background: var(--primary-dark);
+            }
+
+        .btn-sm-dl {
+            background: var(--bg);
+            color: var(--primary);
+            border: 1px solid var(--border);
+        }
+
+            .btn-sm-dl:hover {
+                background: var(--primary-light);
+            }
+
+        /* Empty state */
+        .no-related {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            background: var(--white);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            font-size: 11.5px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+
+        /* Responsive */
+        @@media (max-width: 600px) {
+            .doc-meta-row {
+                gap: 1rem;
+            }
+
+            .doc-title {
+                font-size: 16px;
+            }
+
+            .preview-frame {
+                height: 300px;
+            }
+
+            .related-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .topbar-company {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Topbar -->
+    <header class="topbar">
+        <div class="topbar-brand">
+            <div class="brand-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="12" y1="18" x2="12" y2="12" />
+                    <line x1="9" y1="15" x2="15" y2="15" />
+                </svg>
+            </div>
+            <div>
+                <div class="brand-name">DocumentUpload</div>
+                <div class="brand-sub">Document Management Portal</div>
+            </div>
+        </div>
+        <div class="topbar-company">
+            ID Labels &amp; Solution PVT. LTD.
+        </div>
+    </header>
+
+    <!-- Main -->
+    <div class="main">
+
+        <!-- Main Document Card -->
+        <div class="doc-card" id="mainCard">
+            <div class="doc-card-header">
+                <div class="doc-type-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    @(doc.DocumentType ?? "Document")
+                </div>
+                <div class="doc-title" id="mainDocTitle">@doc.MasterDocumentName</div>
+                <div class="doc-meta-row">
+                    <div class="doc-meta-item">
+                        <span class="doc-meta-label">Category</span>
+                        <span class="doc-meta-value">@(doc.Topic ?? "-")</span>
+                    </div>
+                    <div class="doc-meta-item">
+                        <span class="doc-meta-label">Uploaded By</span>
+                        <span class="doc-meta-value">@(doc.EntryBy ?? "-")</span>
+                    </div>
+                    <div class="doc-meta-item">
+                        <span class="doc-meta-label">Views</span>
+                        <span class="doc-meta-value">@(doc.No_Of_visitors ?? 0)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="doc-actions">
+                @if (isPreview)
+                {
+                    <button class="btn btn-view" onclick="showPreview('@viewUrl', this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        View Document
+                    </button>
+                }
+                <a class="btn btn-download" href="@dlUrl" download>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    Download
+                </a>
+            </div>
+
+            <!-- Preview Area -->
+            <div class="preview-area" id="previewArea">
+                @if (isPreview)
+                {
+                    <div class="preview-placeholder" id="previewPlaceholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        <p>Click <strong>View Document</strong> to preview</p>
+                        <span>PDF and images supported</span>
+                    </div>
+                    <iframe id="previewFrame" class="preview-frame"></iframe>
+                }
+                else
+                {
+                    <div class="preview-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        <p>Preview not available for this file type</p>
+                        <span>Please download to view</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Related Documents -->
+        @if (relatedDocs != null && relatedDocs.Count > 0)
+        {
+            <div class="section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+                </svg>
+                More in <span class="category-badge" style="margin-left:6px;">@doc.Topic</span>
+            </div>
+
+            <div class="related-grid">
+                @foreach (var rd in relatedDocs)
+                {
+                    string rdExt = System.IO.Path.GetExtension(rd.DocumentPath ?? "").ToLower();
+                    bool rdPreview = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" }.Contains(rdExt);
+                    string rdViewUrl = Url.Action("PublicDownload", "Document", new { id = rd.EnteryNo });
+                    string rdDlUrl = Url.Action("PublicDownload", "Document", new { id = rd.EnteryNo });
+
+                    <div class="related-card" id="relCard_@rd.EnteryNo">
+                        <div class="related-card-row">
+                            <div class="related-card-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <div class="related-card-name">@rd.MasterDocumentName</div>
+                                <div class="related-card-meta">By: @(rd.EntryBy ?? "-")</div>
+                            </div>
+                        </div>
+                        <div class="related-actions">
+                            @if (rdPreview)
+                            {
+                                <button class="btn-sm btn-sm-view"
+                                        onclick="loadRelated(@rd.EnteryNo, '@rdViewUrl', '@System.Web.HttpUtility.JavaScriptStringEncode(rd.MasterDocumentName ?? "")', '@System.Web.HttpUtility.JavaScriptStringEncode(rd.Topic ?? "")', '@System.Web.HttpUtility.JavaScriptStringEncode(rd.EntryBy ?? "")', true, '@rdDlUrl')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                    View
+                                </button>
+                            }
+                            <a class="btn-sm btn-sm-dl" href="@rdDlUrl" download>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                Download
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+                </svg>
+                Related Documents
+            </div>
+            <div class="no-related">
+                <p>No related documents found in this category.</p>
+            </div>
+        }
+
+        <!-- Footer -->
+        <div class="footer">
+            &copy; @DateTime.Now.Year ID Labels &amp; Solution PVT. LTD. All rights reserved.
+        </div>
+
+    </div>
+
+    <script>// ---- Show preview in main card ----
+        function showPreview(url, btn) {
+            var frame       = document.getElementById('previewFrame');
+            var placeholder = document.getElementById('previewPlaceholder');
+
+            if (frame.style.display === 'block') {
+                // Toggle hide
+                frame.style.display = 'none';
+                frame.src = '';
+                if (placeholder) placeholder.style.display = 'block';
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg> View Document';
+            } else {
+                frame.src = url;
+                frame.style.display = 'block';
+                if (placeholder) placeholder.style.display = 'none';
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg> Close Preview';
+                // Scroll to card
+                document.getElementById('mainCard').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // ---- Load related doc into main card ----
+        function loadRelated(id, viewUrl, name, category, uploadedBy, canPreview, dlUrl) {
+
+            // Update main card details
+            document.getElementById('mainDocTitle').textContent = name;
+
+            // Update download button
+            var dlBtn = document.querySelector('.btn-download');
+            if (dlBtn) dlBtn.href = dlUrl;
+
+            // Update view button
+            var viewBtn = document.querySelector('.btn-view');
+            if (viewBtn) {
+                viewBtn.setAttribute('onclick', 'showPreview(\'' + viewUrl + '\', this)');
+                viewBtn.style.display = canPreview ? 'inline-flex' : 'none';
+            }
+
+            // Reset preview
+            var frame = document.getElementById('previewFrame');
+            var placeholder = document.getElementById('previewPlaceholder');
+            if (frame) {
+                frame.style.display = 'none';
+                frame.src = '';
+            }
+            if (placeholder) placeholder.style.display = 'block';
+
+            // Active card highlight
+            document.querySelectorAll('.related-card').forEach(function (c) {
+                c.classList.remove('active');
+            });
+            var activeCard = document.getElementById('relCard_' + id);
+            if (activeCard) activeCard.classList.add('active');
+
+            // Scroll to top card
+            document.getElementById('mainCard').scrollIntoView({ behavior: 'smooth' });
+
+            // Auto preview if previewable
+            if (canPreview && viewBtn) {
+                setTimeout(function () { showPreview(viewUrl, viewBtn); }, 300);
+            }
+        }</script>
+
+</body>
+</html>

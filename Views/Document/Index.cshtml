@@ -1,0 +1,1252 @@
+﻿@{
+    Layout = null;
+    string userName = Session["UserName"]?.ToString() ?? "User";
+    string userGroup = Session["User_Group"]?.ToString() ?? "";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Documents | DocumentUpload</title>
+    <link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <style>
+        /* ===== BASE ===== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary:      #1a6fd4;
+            --primary-dark: #0d3a70;
+            --primary-light:#e8f1fd;
+            --bg:           #f0f4fb;
+            --sidebar-w:    240px;
+            --topbar-h:     60px;
+            --white:        #fff;
+            --border:       #dde3ef;
+            --text:         #1e293b;
+            --text-muted:   #64748b;
+            --shadow:       0 2px 12px rgba(26,111,212,0.08);
+            --radius:       12px;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            position: fixed; top: 0; left: 0;
+            width: var(--sidebar-w); height: 100vh;
+            background: linear-gradient(180deg, #0d3a70 0%, #020818 100%);
+            z-index: 1000; display: flex; flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-brand {
+            height: var(--topbar-h);
+            display: flex; align-items: center; gap: 10px;
+            padding: 0 1.25rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .sidebar-brand .icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand .icon svg { width: 18px; height: 18px; }
+
+        .brand-text { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.2; }
+        .brand-sub  { font-size: 10px; color: rgba(255,255,255,0.35); }
+
+        .sidebar-nav { padding: 1rem 0; flex: 1; overflow-y: auto; }
+
+        .nav-section {
+            font-size: 10px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 1px; color: rgba(255,255,255,0.3);
+            padding: 0.75rem 1.25rem 0.3rem;
+        }
+
+        .nav-link {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0.6rem 1.25rem;
+            color: rgba(255,255,255,0.55);
+            font-size: 13.5px; text-decoration: none;
+            transition: all 0.2s; border-left: 3px solid transparent;
+        }
+
+        .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .nav-link:hover { color: #fff; background: rgba(255,255,255,0.06); }
+        .nav-link.active { color: #fff; background: rgba(26,111,212,0.2); border-left-color: var(--primary); }
+
+        .sidebar-footer {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .user-info { display: flex; align-items: center; gap: 10px; }
+
+        .user-avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+        }
+
+        .user-name  { font-size: 13px; font-weight: 600; color: #fff; }
+        .user-role  { font-size: 10.5px; color: rgba(255,255,255,0.35); }
+
+        .btn-logout {
+            display: flex; align-items: center; gap: 6px;
+            margin-top: 10px; padding: 7px 12px;
+            background: rgba(220,53,69,0.15);
+            border: 1px solid rgba(220,53,69,0.25);
+            border-radius: 8px; color: #ff6b7a;
+            font-size: 12.5px; text-decoration: none; width: 100%;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover { background: rgba(220,53,69,0.25); color: #ff6b7a; }
+        .btn-logout svg { width: 14px; height: 14px; }
+
+        /* ===== MAIN ===== */
+        .main-wrap {
+            margin-left: var(--sidebar-w);
+            display: flex; flex-direction: column; min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* ===== TOPBAR ===== */
+        .topbar {
+            height: var(--topbar-h); background: var(--white);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; padding: 0 1.5rem;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        .topbar-left { display: flex; align-items: center; gap: 12px; }
+        .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+        .btn-menu {
+            display: none; background: none; border: none;
+            padding: 6px; cursor: pointer; color: var(--text-muted);
+            border-radius: 8px;
+        }
+
+        .btn-menu svg { width: 20px; height: 20px; }
+        .btn-menu:hover { background: var(--primary-light); color: var(--primary); }
+
+        .topbar-title { font-size: 16px; font-weight: 700; color: var(--text); }
+
+        /* ===== PAGE CONTENT ===== */
+        .page-content { padding: 1.5rem; flex: 1; }
+
+        /* ===== SEARCH BAR ===== */
+        .search-section {
+            background: var(--white); border-radius: var(--radius);
+            padding: 1.25rem 1.5rem; margin-bottom: 1.25rem;
+            box-shadow: var(--shadow);
+            display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+        }
+
+        .search-label { font-size: 13px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+
+        .search-input-wrap { position: relative; flex: 1; min-width: 200px; }
+
+        .search-input-wrap input {
+            width: 100%; padding: 9px 14px 9px 38px;
+            border: 1.5px solid var(--border); border-radius: 10px;
+            font-size: 13.5px; color: var(--text); outline: none;
+            transition: all 0.2s; background: var(--bg);
+        }
+
+        .search-input-wrap input:focus {
+            border-color: var(--primary);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(26,111,212,0.1);
+        }
+
+        .search-input-wrap .search-ico {
+            position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .search-input-wrap .search-ico svg { width: 15px; height: 15px; }
+
+        .search-hint { font-size: 11.5px; color: var(--text-muted); }
+
+        /* ===== STATS ===== */
+        .stats-row { display: flex; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+
+        .stat-card {
+            background: var(--white); border-radius: var(--radius);
+            padding: 1rem 1.25rem; flex: 1; min-width: 130px;
+            box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px;
+        }
+
+        .stat-icon {
+            width: 42px; height: 42px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+
+        .stat-icon svg { width: 20px; height: 20px; }
+        .stat-icon.blue  { background: #e8f1fd; color: var(--primary); }
+        .stat-icon.green { background: #e8f5ee; color: #198754; }
+        .stat-icon.orange{ background: #fff3e0; color: #e67e22; }
+
+        .stat-val  { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; }
+        .stat-lbl  { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+
+        /* ===== CARD ===== */
+        .doc-card {
+            background: var(--white); border-radius: var(--radius);
+            box-shadow: var(--shadow); overflow: hidden;
+        }
+
+        .doc-card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+        }
+
+        .doc-card-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .doc-card-title svg { color: var(--primary); width: 18px; height: 18px; }
+
+        .btn-add {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--primary); color: #fff;
+            border: none; border-radius: 10px;
+            padding: 8px 16px; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+        }
+
+        .btn-add:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(26,111,212,0.3); }
+        .btn-add svg { width: 15px; height: 15px; }
+
+        /* ===== TABLE ===== */
+        .table-wrap { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        thead th {
+            background: #f8faff; padding: 10px 14px;
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.6px; color: var(--text-muted);
+            border-bottom: 1px solid var(--border); white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 11px 14px; font-size: 13.5px;
+            border-bottom: 1px solid #f0f4fb; vertical-align: middle;
+        }
+
+        tbody tr:hover { background: #f8faff; }
+        tbody tr:last-child td { border-bottom: none; }
+
+        .doc-name { font-weight: 600; color: var(--text); }
+        .doc-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 20px;
+            font-size: 11px; font-weight: 600;
+        }
+
+        .badge-blue   { background: #e8f1fd; color: var(--primary); }
+        .badge-green  { background: #e8f5ee; color: #198754; }
+        .badge-orange { background: #fff3e0; color: #e67e22; }
+        .badge-purple { background: #f3e8fd; color: #7c3aed; }
+        .badge-gray   { background: #f0f4fb; color: var(--text-muted); }
+
+        .action-btns { display: flex; gap: 6px; }
+
+        .btn-icon {
+            width: 32px; height: 32px; border-radius: 8px; border: none;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s;
+        }
+
+        .btn-icon svg { width: 14px; height: 14px; }
+        .btn-icon.view   { background: #e8f1fd; color: var(--primary); }
+        .btn-icon.delete { background: #fde8e8; color: #dc3545; }
+        .btn-icon.view:hover   { background: var(--primary); color: #fff; }
+        .btn-icon.delete:hover { background: #dc3545; color: #fff; }
+
+        .empty-state {
+            text-align: center; padding: 3rem 1rem; color: var(--text-muted);
+        }
+
+        .empty-state svg { width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.3; }
+        .empty-state p { font-size: 14px; }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(2,8,24,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 2000; align-items: center; justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal-box {
+            background: var(--white); border-radius: 18px;
+            width: 100%; max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            animation: modalIn 0.3s cubic-bezier(.22,1,.36,1);
+            max-height: 90vh; overflow-y: auto;
+        }
+
+        @*@keyframes*@ @*/*modalIn { from { opacity: 0; transform: scale(0.93) translateY(20px); } to { opacity: 1; transform: none; } }*/*@
+
+        .modal-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .modal-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .modal-title svg { color: var(--primary); width: 18px; height: 18px; }
+
+        .btn-close {
+            width: 30px; height: 30px; border-radius: 8px; border: none;
+            background: var(--bg); color: var(--text-muted);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 16px; transition: all 0.2s;
+        }
+
+        .btn-close:hover { background: #fde8e8; color: #dc3545; }
+
+        .modal-body { padding: 1.5rem; }
+        .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+        .form-group { margin-bottom: 1.1rem; }
+
+        .form-label {
+            display: block; font-size: 12px; font-weight: 600;
+            color: var(--text-muted); text-transform: uppercase;
+            letter-spacing: 0.6px; margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%; padding: 10px 14px;
+            border: 1.5px solid var(--border); border-radius: 10px;
+            font-size: 14px; color: var(--text); outline: none;
+            transition: all 0.2s; background: var(--bg);
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary); background: var(--white);
+            box-shadow: 0 0 0 3px rgba(26,111,212,0.1);
+        }
+
+        /* Category dropdown */
+        .cat-wrap { position: relative; }
+
+        .cat-dropdown {
+            position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+            background: var(--white); border: 1.5px solid var(--primary);
+            border-radius: 10px; z-index: 100; max-height: 200px; overflow-y: auto;
+            box-shadow: 0 8px 24px rgba(26,111,212,0.15);
+            display: none;
+        }
+
+        .cat-dropdown.show { display: block; }
+
+        .cat-item {
+            padding: 9px 14px; font-size: 13.5px; cursor: pointer;
+            transition: background 0.15s; border-bottom: 1px solid #f0f4fb;
+        }
+
+        .cat-item:last-child { border-bottom: none; }
+        .cat-item:hover { background: var(--primary-light); color: var(--primary); }
+        .cat-item.new-cat { color: var(--primary); font-weight: 600; font-style: italic; }
+
+        /* File upload */
+        .file-drop {
+            border: 2px dashed var(--border); border-radius: 10px;
+            padding: 1.5rem; text-align: center; cursor: pointer;
+            transition: all 0.2s; background: var(--bg);
+        }
+
+        .file-drop:hover, .file-drop.dragover {
+            border-color: var(--primary); background: var(--primary-light);
+        }
+
+        .file-drop svg { width: 32px; height: 32px; color: var(--primary); margin-bottom: 8px; opacity: 0.6; }
+        .file-drop p { font-size: 13px; color: var(--text-muted); }
+        .file-drop p span { color: var(--primary); font-weight: 600; }
+        .file-name { font-size: 12.5px; color: var(--primary); margin-top: 6px; font-weight: 600; }
+
+        /* Buttons */
+        .btn-primary {
+            background: var(--primary); color: #fff; border: none;
+            border-radius: 10px; padding: 10px 22px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; font-family: 'Segoe UI', sans-serif;
+        }
+
+        .btn-primary:hover { background: var(--primary-dark); box-shadow: 0 6px 16px rgba(26,111,212,0.3); }
+
+        .btn-secondary {
+            background: var(--bg); color: var(--text-muted); border: 1.5px solid var(--border);
+            border-radius: 10px; padding: 10px 22px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; font-family: 'Segoe UI', sans-serif;
+        }
+
+        .btn-secondary:hover { background: var(--border); }
+
+        /* Toast */
+        .toast-wrap { position: fixed; top: 80px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+
+        .toast {
+            display: flex; align-items: center; gap: 10px;
+            background: var(--white); border-radius: 12px;
+            padding: 12px 16px; min-width: 260px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border-left: 4px solid var(--primary);
+            animation: toastIn 0.3s ease;
+            font-size: 13.5px;
+        }
+
+        .toast.success { border-left-color: #198754; }
+        .toast.error   { border-left-color: #dc3545; }
+
+        @*@keyframes toastIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: none; } }
+
+        /* Spinner */
+        @keyframes spin { to { transform: rotate(360deg); } }*@
+        .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+
+        /* Overlay (mobile sidebar) */
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
+        .sidebar-overlay.show { display: block; }
+
+        /* ===== RESPONSIVE ===== */
+        @@media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-wrap { margin-left: 0; }
+            .btn-menu { display: flex; }
+            .stats-row .stat-card { min-width: calc(50% - 0.5rem); }
+            .search-section { flex-direction: column; align-items: stretch; }
+            .search-label { display: none; }
+            thead th:nth-child(4),
+            thead th:nth-child(5),
+            tbody td:nth-child(4),
+            tbody td:nth-child(5) { display: none; }
+        }
+
+        @@media (max-width: 480px) {
+            .page-content { padding: 1rem; }
+            .stats-row .stat-card { min-width: 100%; }
+            .modal-box { border-radius: 14px; }
+        }
+
+
+
+        /*QR STYLE*/
+   .btn-icon.download { background: #e8f5ee; color: #198754; }
+.btn-icon.download:hover { background: #198754; color: #fff; }
+.btn-icon.qr { background: #f3e8fd; color: #7c3aed; }
+.btn-icon.qr:hover { background: #7c3aed; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- Toast Container -->
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="12" y1="18" x2="12" y2="12" />
+                    <line x1="9" y1="15" x2="15" y2="15" />
+                </svg>
+            </div>
+            <div>
+                <div class="brand-text">DocumentUpload</div>
+                <div class="brand-sub">Management Portal</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">Main</div>
+            <!-- Dashboard - Sab docs -->
+            @*<a href="/Document/Index" class="nav-link" id="navDashboard">*@
+            <a href="@Url.Action("Index", "Document")" class="nav-link" id="navDashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                </svg>
+                Dashboard
+            </a>
+
+            <!-- My Documents - Sirf apne docs -->
+            @*<a href="/Document/MyDocuments" class="nav-link" id="navMyDocs">*@
+            <a href="@Url.Action("MyDocuments", "Document")" class="nav-link" id="navMyDocs">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                </svg>
+                My Documents
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">@(userName.Length > 0 ? userName[0].ToString().ToUpper() : "U")</div>
+                <div>
+                    <div class="user-name">@userName</div>
+                    <div class="user-role">@userGroup</div>
+                </div>
+            </div>
+            <a href="@Url.Action("Logout", "Account")" class="btn-logout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- ===== MAIN ===== -->
+    <div class="main-wrap">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="btn-menu" onclick="toggleSidebar()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                        <line x1="3" y1="12" x2="21" y2="12" />
+                        <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                </button>
+                <span class="topbar-title">My Documents</span>
+            </div>
+            <div class="topbar-right">
+                <button class="btn-add" onclick="openModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Add Document
+                </button>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="page-content">
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="stat-val" id="totalDocs">0</div>
+                        <div class="stat-lbl">Total Documents</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="stat-val" id="totalCats">0</div>
+                        <div class="stat-lbl">Categories</div>
+                    </div>
+                </div>
+                @*<div class="stat-card">
+                        <div class="stat-icon orange">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="stat-val" id="totalViews">0</div>
+                            <div class="stat-lbl">Total Views</div>
+                        </div>
+                    </div>*@
+            </div>
+
+            <!-- Search -->
+            <div class="search-section">
+                <span class="search-label">Search by Category:</span>
+                <div class="search-input-wrap">
+                    <span class="search-ico">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                    </span>
+                    <input type="text" id="searchInput" placeholder="Type category name to filter documents..." />
+                </div>
+                <span class="search-hint" id="searchHint"></span>
+            </div>
+
+            <!-- Documents Table -->
+            <div class="doc-card">
+                <div class="doc-card-header">
+                    <div class="doc-card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        Documents
+                    </div>
+                    <button class="btn-add" onclick="openModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        Add New
+                    </button>
+                </div>
+                <div class="table-wrap">
+                    <table id="docTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Document Name</th>
+                                <th>Category</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="docTableBody">
+                            @*<tr>
+                                <td colspan="6">
+                                    <div class="empty-state">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                            <polyline points="14 2 14 8 20 8" />
+                                        </svg>
+                                        <p>Loading documents...</p>
+                                    </div>
+                                </td>
+                            </tr>*@
+                        </tbody>
+                    </table>
+                </div>
+
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ===== ADD DOCUMENT MODAL ===== -->
+    <div class="modal-overlay" id="addModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    Add New Document
+                </div>
+                <button class="btn-close" onclick="closeModal()">&#x2715;</button>
+            </div>
+            <div class="modal-body">
+
+                <div class="form-group">
+                    <label class="form-label">Document Name *</label>
+                    <input type="text" class="form-control" id="docName" placeholder="Enter document name" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category *</label>
+                    <div class="cat-wrap">
+                        <input type="text" class="form-control" id="catInput"
+                               placeholder="Type to search or add new category..."
+                               autocomplete="off" oninput="onCatInput()" />
+                        <div class="cat-dropdown" id="catDropdown"></div>
+                    </div>
+                    <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">
+                        💡 Type a new category name to auto-create it on save
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Document Type</label>
+                    <input type="text" class="form-control" id="docType" placeholder="e.g. Invoice, Report, Contract..." />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Upload File *</label>
+                    <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()"
+                         ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        <p>Drag & drop or <span>browse file</span></p>
+                        <p style="font-size:11px;margin-top:4px;opacity:0.6;">All file types allowed</p>
+                        <div class="file-name" id="fileName"></div>
+                    </div>
+                    <input type="file" id="fileInput" style="display:none;" onchange="onFileSelect(this)" />
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn-primary" id="btnSubmit" onclick="submitDocument()">
+                    <span id="submitTxt">Upload Document</span>
+                    <div class="spinner" id="submitSpinner"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        var allDocs = [];
+        var searchTimer = null;
+        var currentTerm = '';
+
+        // URL se detect karo - Dashboard ya MyDocuments
+        var isMyDocs = window.location.pathname.toLowerCase().indexOf('mydocuments') !== -1;
+
+        // ---- Load documents on page load ----
+        $(document).ready(function () {
+
+            // Active nav link set karo
+            if (isMyDocs) {
+                $('#navMyDocs').addClass('active');
+                $('#navDashboard').removeClass('active');
+                $('.topbar-title').text('My Documents');
+            } else {
+                $('#navDashboard').addClass('active');
+                $('#navMyDocs').removeClass('active');
+                $('.topbar-title').text('All Documents');
+            }
+
+            loadDocuments('');
+
+            $('#searchInput').on('input', function () {
+                clearTimeout(searchTimer);
+                var term = $(this).val().trim();
+                searchTimer = setTimeout(function () {
+                    currentTerm = term;
+                    loadDocuments(term);
+                }, 400);
+            });
+        });
+
+             function loadDocuments(term) {
+            $.ajax({
+                url: '@Url.Action("SearchByCategory", "Document")',
+                type: 'GET',
+                data: { term: term, isMyDocs: isMyDocs },
+                success: function (res) {
+                    renderTable(res);
+                    updateStats(res);
+                    $('#searchHint').text(
+                        term ? res.length + ' result(s) found' : ''
+                    );
+                },
+                error: function () {
+                    showToast('Failed to load documents.', 'error');
+                }
+            });
+        }
+
+        function searchByCategory(term) {
+            $.ajax({
+                url: '@Url.Action("SearchByCategory", "Document")',
+                type: 'GET',
+                data: { term: term },
+                success: function (data) {
+                    renderTable(data);
+                    $('#searchHint').text(data.length + ' result(s) found');
+                },
+                error: function () { showToast('Search failed.', 'error'); }
+            });
+        }
+
+        function renderTable(docs) {
+            var tbody = $('#docTableBody');
+            tbody.empty();
+
+            if (!docs || docs.length === 0) {
+                tbody.html('<tr><td colspan="6"><div class="empty-state">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;opacity:0.3;display:block;margin:0 auto 10px">' +
+                    '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>' +
+                    '<polyline points="14 2 14 8 20 8"/></svg>' +
+                    '<p>No documents found</p></div></td></tr>');
+                return;
+            }
+
+            docs.forEach(function (d, i) {
+                var date = d.EntryDate ? new Date(parseInt(d.EntryDate.replace('/Date(', '').replace(')/', ''))).toLocaleDateString('en-IN') : '-';
+                var badgeClass = getBadgeClass(d.DocumentType);
+                var row = '<tr>' +
+                    '<td style="color:var(--text-muted);font-size:12px;">' + (i + 1) + '</td>' +
+                    '<td><div class="doc-name">' + (d.MasterDocumentName || '-') + '</div>' +
+                    '<div class="doc-meta">By: ' + (d.EntryBy || '-') + '</div></td>' +
+                    '<td><span class="badge badge-blue">' + (d.Topic || '-') + '</span></td>' +
+                    '<td><span class="badge ' + badgeClass + '">' + (d.DocumentType || 'General') + '</span></td>' +
+                    '<td style="font-size:12.5px;white-space:nowrap;">' + date + '</td>' +
+                    '<td><div class="action-btns">' +
+
+                    // View
+                    '<button class="btn-icon view" onclick="viewDoc(' + d.EnteryNo + ',\'' + (d.DocumentPath || '') + '\')" title="Preview">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>' +
+
+                    // Download
+                    '<button class="btn-icon download" onclick="downloadDoc(' + d.EnteryNo + ')" title="Download">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>' +
+
+                    // QR Code
+                    '<button class="btn-icon qr" onclick="openQR(' + d.EnteryNo + ')" title="Generate QR">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3v3M21 21v.01M16 16v.01M16 21h2"/></svg></button>' +
+
+                    // Delete
+                    '<button class="btn-icon delete" onclick="deleteDoc(' + d.EnteryNo + ')" title="Delete">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>' +
+
+                    '</div></td></tr>';
+                tbody.append(row);
+            });
+        }
+
+
+
+        function updateStats(docs) {
+            $('#totalDocs').text(docs.length);
+            var cats = [...new Set(docs.map(d => d.Topic).filter(Boolean))];
+            $('#totalCats').text(cats.length);
+            var views = docs.reduce(function (sum, d) { return sum + (d.No_Of_visitors || 0); }, 0);
+            $('#totalViews').text(views);
+        }
+
+        function getBadgeClass(type) {
+            if (!type) return 'badge-gray';
+            type = type.toLowerCase();
+            if (type.includes('pdf'))    return 'badge-orange';
+            if (type.includes('word') || type.includes('doc')) return 'badge-blue';
+            if (type.includes('excel') || type.includes('xls')) return 'badge-green';
+            if (type.includes('image') || type.includes('img')) return 'badge-purple';
+            return 'badge-gray';
+        }
+
+        // ---- Category Dropdown ----
+        function onCatInput() {
+            var term = $('#catInput').val().trim();
+            if (term.length === 0) { $('#catDropdown').removeClass('show').empty(); return; }
+
+            $.ajax({
+                url: '@Url.Action("GetCategories", "Document")',
+                type: 'GET',
+                data: { term: term },
+                success: function (cats) {
+                    var dd = $('#catDropdown');
+                    dd.empty();
+
+                    cats.forEach(function (c) {
+                        dd.append('<div class="cat-item" onclick="selectCat(\'' + c.CategoryName + '\')">' + c.CategoryName + '</div>');
+                    });
+
+                    // Option to add new
+                    var exists = cats.some(function (c) { return c.CategoryName.toLowerCase() === term.toLowerCase(); });
+                    if (!exists) {
+                        dd.append('<div class="cat-item new-cat" onclick="selectCat(\'' + term + '\')">+ Add new: "' + term + '"</div>');
+                    }
+
+                    dd.addClass('show');
+                }
+            });
+        }
+
+        function selectCat(name) {
+            $('#catInput').val(name);
+            $('#catDropdown').removeClass('show').empty();
+        }
+
+        // Close dropdown on outside click
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('.cat-wrap').length)
+                $('#catDropdown').removeClass('show');
+        });
+
+        // ---- File Upload ----
+        function onFileSelect(input) {
+            if (input.files && input.files[0]) {
+                $('#fileName').text('📎 ' + input.files[0].name);
+            }
+        }
+
+        function onDragOver(e) { e.preventDefault(); $('#fileDrop').addClass('dragover'); }
+        function onDragLeave(e) { $('#fileDrop').removeClass('dragover'); }
+        function onDrop(e) {
+            e.preventDefault();
+            $('#fileDrop').removeClass('dragover');
+            var files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('fileInput').files = files;
+                $('#fileName').text('📎 ' + files[0].name);
+            }
+        }
+
+        // ---- Submit Document ----
+        function submitDocument() {
+            var docName = $('#docName').val().trim();
+            var cat     = $('#catInput').val().trim();
+            var docType = $('#docType').val().trim();
+            var file    = document.getElementById('fileInput').files[0];
+
+            if (!docName) { showToast('Please enter document name.', 'error'); return; }
+            if (!cat)     { showToast('Please enter or select a category.', 'error'); return; }
+            if (!file)    { showToast('Please select a file to upload.', 'error'); return; }
+
+            // Show loader
+            $('#submitTxt').hide();
+            $('#submitSpinner').show();
+
+            var formData = new FormData();
+            formData.append('masterDocumentName', docName);
+            formData.append('topic', cat);
+            formData.append('documentType', docType || 'General');
+            formData.append('file', file);
+            formData.append('__RequestVerificationToken', $('input[name="__RequestVerificationToken"]').val());
+
+            $.ajax({
+                url: '@Url.Action("AddDocument", "Document")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    $('#submitTxt').show();
+                    $('#submitSpinner').hide();
+                    if (res.success) {
+                        showToast(res.message, 'success');
+                        closeModal();
+                        loadDocuments($('#searchInput').val().trim());
+                    } else {
+                        showToast(res.message, 'error');
+                    }
+                },
+                error: function () {
+                    $('#submitTxt').show();
+                    $('#submitSpinner').hide();
+                    showToast('Upload failed. Please try again.', 'error');
+                }
+            });
+        }
+
+        // ---- View Document ----
+              function viewDoc(id, docType) {
+            var ext = (docType || '').toLowerCase();
+            var previewable = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+            var isPreviewable = previewable.some(function(e) { return ext.includes(e); });
+
+            var url = '@Url.Action("ViewDocument", "Document")/' + id;
+
+            if (isPreviewable) {
+                // Nayi tab mein preview karo
+                window.open(url, '_blank');
+            } else {
+                // Direct download
+                window.location.href = url;
+            }
+        }
+
+        // ---- Delete Document ----
+        function deleteDoc(id) {
+            if (!confirm('Are you sure you want to delete this document?')) return;
+            $.ajax({
+                url: '@Url.Action("DeleteDocument", "Document")',
+                type: 'POST',
+                data: { id: id, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
+                success: function (res) {
+                    if (res.success) {
+                        showToast(res.message, 'success');
+                        loadDocuments($('#searchInput').val().trim());
+                    } else {
+                        showToast(res.message, 'error');
+                    }
+                }
+            });
+        }
+
+        // ---- Modal ----
+        function openModal() {
+            $('#addModal').addClass('show');
+            $('body').css('overflow', 'hidden');
+            // Add AntiForgery token hidden field for AJAX
+            if ($('input[name="__RequestVerificationToken"]').length === 0) {
+                $('body').append('@Html.AntiForgeryToken()');
+            }
+        }
+
+        function closeModal() {
+            $('#addModal').removeClass('show');
+            $('body').css('overflow', '');
+            $('#docName').val('');
+            $('#catInput').val('');
+            $('#docType').val('');
+            $('#fileName').text('');
+            document.getElementById('fileInput').value = '';
+        }
+
+        // ---- Sidebar (mobile) ----
+        function toggleSidebar() {
+            $('#sidebar').toggleClass('open');
+            $('#sidebarOverlay').toggleClass('show');
+        }
+
+        function closeSidebar() {
+            $('#sidebar').removeClass('open');
+            $('#sidebarOverlay').removeClass('show');
+        }
+
+        // ---- Toast ----
+        function showToast(msg, type) {
+            var icon = type === 'success' ? '✅' : '❌';
+            var t = $('<div class="toast ' + (type || '') + '">' + icon + ' ' + msg + '</div>');
+            $('#toastWrap').append(t);
+            setTimeout(function () { t.fadeOut(400, function () { t.remove(); }); }, 3500);
+        }
+
+
+
+        //QR SCRIP
+        // ---- Download ----
+function downloadDoc(id) {
+    window.location.href = '@Url.Action("DownloadDocument", "Document")/' + id;
+}
+
+// ---- QR Code ----
+function openQR(id) {
+    $.ajax({
+        url: '@Url.Action("GetDocumentForQR", "Document")/' + id,
+        type: 'GET',
+        success: function (res) {
+            if (!res.success) { showToast('Failed to generate QR.', 'error'); return; }
+
+            $('#qrImage').attr('src', 'data:image/png;base64,' + res.qrBase64);
+            $('#qrDocName').text(res.documentName || '-');
+            $('#qrCategory').text(res.category || '-');
+            $('#qrDate').text(res.date || '-');
+            $('#qrUploadedBy').text(res.uploadedBy || '-');
+            $('#qrModal').addClass('show');
+        },
+        error: function () { showToast('Failed to generate QR.', 'error'); }
+    });
+}
+
+function closeQR() {
+    $('#qrModal').removeClass('show');
+}
+
+// ---- Print QR Card ----
+function printQR() {
+    var cardHtml = document.getElementById('qrCard').innerHTML;
+    var win = window.open('', '_blank', 'width=500,height=700');
+    win.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>QR Code - Document</title>
+            <style>
+                * { margin:0; padding:0; box-sizing:border-box; }
+                body {
+                    background: linear-gradient(145deg, #0d3a70, #1a6fd4);
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: 'Segoe UI', sans-serif;
+                    padding: 2rem;
+                }
+                .card {
+                    background: linear-gradient(145deg, #0d3a70, #1a6fd4);
+                    border-radius: 18px;
+                    padding: 1.75rem 1.5rem;
+                    text-align: center;
+                    color: #fff;
+                    width: 320px;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                }
+                img { width:160px; height:160px; display:block; margin:0 auto; }
+                @@media print {
+                    body { background: white; }
+                    .card { box-shadow: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="card">${cardHtml}</div>
+            <script>
+                window.onload = function() {
+                    window.print();
+                    window.close();
+                }
+            </scr` + `ipt>
+        </body>
+        </html>
+    `);
+    win.document.close();
+}
+        //QR SCRIPT
+
+
+
+    </script>
+
+
+    <!-- QR Code Modal -->
+    <div class="modal-overlay" id="qrModal">
+        <div class="modal-box" style="max-width:420px;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--primary)">
+                        <rect x="3" y="3" width="5" height="5" />
+                        <rect x="16" y="3" width="5" height="5" />
+                        <rect x="3" y="16" width="5" height="5" />
+                    </svg>
+                    QR Code
+                </div>
+                <button class="btn-close" onclick="closeQR()">&#x2715;</button>
+            </div>
+            <div class="modal-body" style="padding:0;">
+                <div id="qrCard" style="
+                background: linear-gradient(145deg, #0d3a70, #1a6fd4);
+                border-radius: 0 0 18px 18px;
+                padding: 1.75rem 1.5rem;
+                text-align: center;
+                color: #fff;
+            ">
+                    <!-- Company Header -->
+                    <div style="margin-bottom:1.25rem;">
+                        <div style="
+                        width:44px;height:44px;border-radius:12px;
+                        background:rgba(255,255,255,0.15);
+                        display:inline-flex;align-items:center;justify-content:center;
+                        margin-bottom:8px;
+                    ">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:22px;height:22px;">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                        </div>
+                        <div style="font-size:13px;font-weight:700;letter-spacing:0.3px;">ID Labels & Solution PVT. LTD.</div>
+                        <div style="font-size:10.5px;opacity:0.6;margin-top:2px;">Document Management Portal</div>
+                    </div>
+
+                    <!-- QR Code Image -->
+                    <div style="
+                    background:#fff;
+                    border-radius:16px;
+                    padding:16px;
+                    display:inline-block;
+                    margin-bottom:1.25rem;
+                    box-shadow:0 8px 24px rgba(0,0,0,0.2);
+                ">
+                        <img id="qrImage" src="" style="width:160px;height:160px;display:block;" />
+                    </div>
+
+                    <!-- Document Details -->
+                    <div style="
+                    background:rgba(255,255,255,0.1);
+                    border-radius:12px;
+                    padding:1rem;
+                    margin-bottom:1.25rem;
+                    text-align:left;
+                ">
+                        <div style="font-size:10px;opacity:0.6;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Document Details</div>
+
+                        <div style="margin-bottom:6px;">
+                            <div style="font-size:10px;opacity:0.55;">Document Name</div>
+                            <div style="font-size:13px;font-weight:600;" id="qrDocName">-</div>
+                        </div>
+                        <div style="display:flex;gap:1rem;">
+                            <div style="flex:1;">
+                                <div style="font-size:10px;opacity:0.55;">Category</div>
+                                <div style="font-size:12px;font-weight:500;" id="qrCategory">-</div>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-size:10px;opacity:0.55;">Date</div>
+                                <div style="font-size:12px;font-weight:500;" id="qrDate">-</div>
+                            </div>
+                        </div>
+                        <div style="margin-top:6px;">
+                            <div style="font-size:10px;opacity:0.55;">Uploaded By</div>
+                            <div style="font-size:12px;font-weight:500;" id="qrUploadedBy">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Scan hint -->
+                    <div style="font-size:11px;opacity:0.55;">
+                        📱 Scan to download / view document
+                    </div>
+                </div>
+
+                <!-- Print Button -->
+                <div style="padding:1rem 1.5rem;display:flex;gap:10px;">
+                    <button class="btn-secondary" onclick="closeQR()" style="flex:1;">Close</button>
+                    <button class="btn-primary" onclick="printQR()" style="flex:1;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:6px;vertical-align:middle;">
+                            <polyline points="6 9 6 2 18 2 18 9" />
+                            <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
+                            <rect x="6" y="14" width="12" height="8" />
+                        </svg>
+                        Print QR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @*<script>
+        $(document).ready(function () {
+            $('#docTable').DataTable({
+                paging: true,
+                searching: true,
+                ordering: true,
+                pageLength: 5
+            });
+        });
+    </script>*@
+</body>
+</html> 

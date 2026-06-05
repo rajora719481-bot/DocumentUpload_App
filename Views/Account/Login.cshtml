@@ -1,0 +1,433 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | DocumentUpload</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @@keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@keyframes floatCard {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        @@keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        body, html {
+            height: 100%;
+        }
+
+        body {
+            position: relative;
+            background: #020818;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+        }
+
+        canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .glow-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(90px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .card-outer {
+            position: relative;
+            z-index: 10;
+            animation: fadeUp 0.8s cubic-bezier(.22,1,.36,1) both, floatCard 6s ease-in-out 1s infinite;
+        }
+
+        .card {
+            background: rgba(6,18,52,0.72);
+            backdrop-filter: blur(28px);
+            border-radius: 22px;
+            padding: 2.25rem 2rem 1.75rem;
+            width: 360px;
+            border: 1px solid rgba(59,143,232,0.18);
+            box-shadow: 0 0 60px rgba(26,111,212,0.12), 0 30px 60px rgba(0,0,0,0.5);
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .logo-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            background: linear-gradient(145deg, #0d3a70, #1a6fd4);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.85rem;
+            box-shadow: 0 8px 24px rgba(26,111,212,0.4);
+        }
+
+            .logo-icon svg {
+                width: 32px;
+                height: 32px;
+            }
+
+        .app-name {
+            font-size: 21px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.3px;
+        }
+
+            .app-name span {
+                color: #3b8fe8;
+            }
+
+        .app-tagline {
+            font-size: 11.5px;
+            color: rgba(255,255,255,0.35);
+            margin-top: 5px;
+            letter-spacing: 0.4px;
+        }
+
+        .badge-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .badge-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(59,143,232,0.1);
+            border: 1px solid rgba(59,143,232,0.2);
+            border-radius: 20px;
+            padding: 3px 10px;
+            font-size: 10.5px;
+            color: rgba(255,255,255,0.45);
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(59,143,232,0.3), transparent);
+            margin: 1.25rem 0;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.45);
+            letter-spacing: 0.7px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .input-box {
+            position: relative;
+            margin-bottom: 0.9rem;
+        }
+
+            .input-box input {
+                width: 100%;
+                padding: 11px 42px 11px 14px;
+                background: rgba(255,255,255,0.05);
+                border: 1px solid rgba(255,255,255,0.09);
+                border-radius: 11px;
+                color: #fff;
+                font-size: 14px;
+                font-family: 'Segoe UI', sans-serif;
+                outline: none;
+                transition: all 0.25s;
+            }
+
+                .input-box input::placeholder {
+                    color: rgba(255,255,255,0.2);
+                }
+
+                .input-box input:focus {
+                    border-color: rgba(59,143,232,0.6);
+                    background: rgba(59,143,232,0.07);
+                    box-shadow: 0 0 0 3px rgba(26,111,212,0.15);
+                }
+
+        .input-icon {
+            position: absolute;
+            right: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,255,255,0.28);
+            display: flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+
+            .input-icon svg {
+                width: 15px;
+                height: 15px;
+            }
+
+        .eye-btn {
+            cursor: pointer;
+        }
+
+            .eye-btn:hover {
+                color: rgba(255,255,255,0.6);
+            }
+
+        .err-box {
+            display: none;
+            background: rgba(220,53,69,0.1);
+            border: 1px solid rgba(220,53,69,0.28);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #ff6b7a;
+            margin-bottom: 0.85rem;
+        }
+
+        .validation-summary-errors {
+            background: rgba(220,53,69,0.1);
+            border: 1px solid rgba(220,53,69,0.28);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #ff6b7a;
+            margin-bottom: 0.85rem;
+            list-style: none;
+        }
+
+        .btn-login {
+            width: 100%;
+            height: 46px;
+            border: none;
+            border-radius: 11px;
+            font-size: 14.5px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #fff;
+            background: linear-gradient(135deg, #0d3a70, #1a6fd4);
+            transition: transform 0.15s, box-shadow 0.2s;
+            font-family: 'Segoe UI', sans-serif;
+            box-shadow: 0 6px 20px rgba(26,111,212,0.35);
+        }
+
+            .btn-login:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 12px 30px rgba(26,111,212,0.5);
+                background: linear-gradient(135deg, #1a4d8c, #2a7fe8);
+            }
+
+            .btn-login:active {
+                transform: translateY(0);
+            }
+
+        .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 0 auto;
+        }
+
+        .powered-section {
+            margin-top: 1.5rem;
+            padding-top: 1.1rem;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            text-align: center;
+        }
+
+        .powered-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.22);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .powered-brand {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.6);
+        }
+
+            .powered-brand span {
+                color: #3b8fe8;
+            }
+
+        .copyright {
+            font-size: 10px;
+            color: rgba(255,255,255,0.18);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="c"></canvas>
+
+    <div class="glow-orb" style="width:450px;height:450px;top:-180px;left:-160px;background:radial-gradient(circle,rgba(26,111,212,0.15),transparent 70%);"></div>
+    <div class="glow-orb" style="width:350px;height:350px;bottom:-130px;right:-100px;background:radial-gradient(circle,rgba(13,58,112,0.18),transparent 70%);"></div>
+
+    @using (Html.BeginForm("Login", "Account", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="card-outer">
+            <div class="card">
+
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 32 32" fill="none">
+                            <path d="M5 4h13l8 8v16H5V4z" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.9)" stroke-width="1.3" />
+                            <path d="M18 4v8h8" stroke="rgba(255,255,255,0.7)" stroke-width="1.3" stroke-linecap="round" />
+                            <path d="M16 17v6M13 20l3-3 3 3" stroke="#7bb8f0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M10 26h12" stroke="#7bb8f0" stroke-width="1.3" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <div class="app-name">Document<span>Upload</span></div>
+                    <div class="app-tagline">Secure Document Management Portal</div>
+                    <div class="badge-row">
+                        <div class="badge-item">&#128274; Secure</div>
+                        <div class="badge-item">&#8593; Upload</div>
+                        <div class="badge-item">&#128336; 24/7 Access</div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                @* Server-side error *@
+                @if (ViewBag.Error != null)
+                {
+                    <div class="err-box" style="display:block;">&#9888;&nbsp; @ViewBag.Error</div>
+                }
+
+                <div class="input-box">
+                    <label class="field-label">Username / Employee ID</label>
+                    <input type="text" name="User_Name" placeholder="Enter your username" required />
+                    <span class="input-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <circle cx="12" cy="8" r="4" />
+                            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                        </svg>
+                    </span>
+                </div>
+
+                <div class="input-box">
+                    <label class="field-label">Password</label>
+                    <input type="password" name="Password" id="pField" placeholder="Enter your password" required />
+                    <span class="input-icon eye-btn" onclick="togglePwd()">
+                        <svg id="eyeIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    </span>
+                </div>
+
+                <button type="submit" class="btn-login" id="btnLogin" onclick="showLoader()">
+                    <span id="btnTxt">Sign In &nbsp;&#8594;</span>
+                    <div class="spinner" id="spinner"></div>
+                </button>
+
+                <div class="powered-section">
+                    <div class="powered-label">Powered by</div>
+                    <div class="powered-brand">ID Labels <span>&amp;</span> Solution PVT. LTD.</div>
+                    <div class="copyright">&copy; @DateTime.Now.Year ID Labels &amp; Solution PVT. LTD. All rights reserved.</div>
+                </div>
+
+            </div>
+        </div>
+    }
+
+    <script>
+        /* ---- 3D Star Field ---- */
+        (function () {
+            var cv = document.getElementById('c'), ctx = cv.getContext('2d'), W, H, dots = [];
+            function resize() { W = cv.width = window.innerWidth; H = cv.height = window.innerHeight; }
+            function Dot() { this.reset(true); }
+            Dot.prototype.reset = function (init) {
+                this.x = Math.random() * W; this.y = Math.random() * H;
+                this.z = init ? Math.random() * W : W; this.pz = this.z;
+            };
+            Dot.prototype.update = function () { this.z -= 2.8; if (this.z <= 0) this.reset(false); };
+            Dot.prototype.draw = function () {
+                var sx = (this.x - W / 2) * (W / this.z) + W / 2;
+                var sy = (this.y - H / 2) * (W / this.z) + H / 2;
+                var px = (this.x - W / 2) * (W / this.pz) + W / 2;
+                var py = (this.y - H / 2) * (W / this.pz) + H / 2;
+                var r = Math.max(0.3, 1.6 * (1 - this.z / W));
+                var op = (1 - this.z / W) * 0.9;
+                ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(sx, sy);
+                ctx.strokeStyle = 'rgba(255,255,255,' + op + ')';
+                ctx.lineWidth = r; ctx.stroke(); this.pz = this.z;
+            };
+            resize();
+            for (var i = 0; i < 200; i++) dots.push(new Dot());
+            function loop() {
+                ctx.fillStyle = 'rgba(2,8,24,0.3)'; ctx.fillRect(0, 0, W, H);
+                dots.forEach(function (d) { d.update(); d.draw(); });
+                requestAnimationFrame(loop);
+            }
+            window.addEventListener('resize', resize);
+            loop();
+        })();
+
+        /* ---- Toggle Password ---- */
+        function togglePwd() {
+            var f = document.getElementById('pField');
+            f.type = f.type === 'password' ? 'text' : 'password';
+            document.getElementById('eyeIco').style.opacity = f.type === 'text' ? '0.4' : '1';
+        }
+
+        /* ---- Show Loader on Submit ---- */
+        function showLoader() {
+            document.getElementById('btnTxt').style.display = 'none';
+            document.getElementById('spinner').style.display = 'block';
+        }
+    </script>
+
+</body>
+</html>
